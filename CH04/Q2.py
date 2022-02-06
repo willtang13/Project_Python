@@ -1,4 +1,4 @@
-
+#Ch04 Q2
 from math import *
 
 def split_n(li, n):
