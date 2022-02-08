@@ -51,3 +51,33 @@ plt.show()
 '''
 何謂機器學習
 '''
+from pyvizml import CreateNBAData
+cnd = CreateNBAData(2020)
+player_stats = cnd.create_player_stats_df()
+# %%
+
+X = player_stats['heightMeters'].values.reshape(-1,1)
+y = player_stats['weightKilograms'].values
+lr = LinearRegression()
+h = lr.fit(X,y)
+print(h.predict(np.array([[1.90]]))[0]) # 預測身高 190 公分 NBA 球員的體重
+print(h.predict(np.array([[1.98]]))[0]) # 預測身高 198 公分 NBA 球員的體重
+print(h.predict(np.array([[2.03]]))[0]) # 預測身高 203 公分 NBA 球員的體重
+# %%
+unique_pos = player_stats['pos'].unique()
+pos_dict = {i : p for i, p in enumerate(unique_pos)}
+pos_dict_reversed = {v : k for k, v in pos_dict.items()}
+print(pos_dict)
+print(pos_dict_reversed)
+
+#%%
+X = player_stats[['apg', 'rpg']].values
+pos = player_stats['pos'].map(pos_dict_reversed)
+y = pos.values
+logit = LogisticRegression()
+h = logit.fit(X, y)
+print(pos_dict[h.predict(np.array([[5, 5]]))[0]])
+print(pos_dict[h.predict(np.array([[5, 10]]))[0]])
+print(pos_dict[h.predict(np.array([[5, 15]]))[0]])
+
+# %%
