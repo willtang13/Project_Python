@@ -67,4 +67,25 @@ print(X_before_scaled[:10, :])
 print(X_after_ms[:10, :])
 print(X_after_ss[:10, :])
 
+
+# %%
+X = players[['heightFeet', 'heightInches']].values.astype(int)
+y = players['weightKilograms'].values
+X_train, X_valid, y_train, y_valid = train_test_split(X, y, test_size=0.33, random_state=42)
+# 初始化
+lr = LinearRegression()
+lr.fit(X_train, y_train)
+y_pred = lr.predict(X_valid)
+
+# %%
+players_train, players_valid = train_test_split(players, test_size=0.3, random_state=42)
+players_train.iloc[:5, :4]
+players_valid.iloc[:5, :4]
+# %%
+train = pd.read_csv("https://kaggle-getting-started.s3-ap-northeast-1.amazonaws.com/titanic/train.csv")
+test = pd.read_csv("https://kaggle-getting-started.s3-ap-northeast-1.amazonaws.com/titanic/test.csv")
+print(train.shape)
+print(test.shape)
+
+train.columns.difference(test.columns) # 差別在 Survived 這個目標向量
 # %%
