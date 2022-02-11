@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.font_manager import FontProperties
-# from tensorflow.keras import datasets
+from tensorflow.keras import datasets
 # %% Matlab 風格
 x = np.linspace(0, np.pi*4, 100)
 plt.figure()
@@ -89,14 +89,14 @@ CS = ax.contourf(X, Y, Z, cmap='RdBu')
 fig.colorbar(CS)
 plt.show()
 # %% 顯示圖片
-# (X_train, y_train), (X_test, y_test) = datasets.minst.load_data(path='mnist.npz')
-# first_picture = X_train[0, :, :]
-# first_picture.shape
+(X_train, y_train), (X_test, y_test) = datasets.mnist.load_data(path='mnist.npz')
+first_picture = X_train[0, :, :]
+first_picture.shape
 
-# fig = plt.figure()
-# ax = plt.axes()
-# ax.imshow(first_picture, cmap='Greys')
-# plt.show()
+fig = plt.figure()
+ax = plt.axes()
+ax.imshow(first_picture, cmap='Greys')
+plt.show()
 
 # %% 繪製子圖
 fig, axes = plt.subplots(3, 5)
@@ -106,6 +106,7 @@ print(axes.shape)
 # %%
 from pyvizml import ImshowSubplots
 
-(X_train, y_train), (X_test, y_test) = datasets.minst.load_data(path='mnist.npz')
+(X_train, y_train), (X_test, y_test) = datasets.mnist.load_data(path='mnist.npz')
 iss = ImshowSubplots(3, 5, (8, 6))
 iss.im_show(X_train, y_train)
+# 
