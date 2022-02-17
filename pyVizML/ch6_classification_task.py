@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 # %%
+import enum
 from pydoc import resolve
+from pyVizML.pyvizml import LogitReg
 from pyvizml import CreateNBAData
 import requests
 import numpy as np
@@ -97,3 +99,103 @@ plot_contour_filled(APG, RPG, resolution)
 # %% Decision Boundary
 plot_decision_boundary(APG, RPG, apg, rpg, y, pos_dict, h, 50)
 # %% 羅吉斯迴歸
+def sigmoid(x):
+    return (1 / (1 + np.exp(-x)))
+
+def plot_sigmoid():
+    x = np.linspace(-6, 6, 100)
+    y = sigmoid(x)
+    fig = plt.figure()
+    ax = plt.axes()
+    ax.plot(x, y)
+    ax.axvline(0, color='black')
+    for i in [0.0, 0.5, 1.0]:
+        ax.axhline(y = i, ls=':', color='k', alpha=0.5)
+    ax.set_ytick([0.0, 0.5, 1.0])
+    ax.set_xlim(-0.1, 1.1)
+    ax.set_title('Sigmoid functioin')
+    plt.show()
+
+plot_sigmoid()
+# %% 羅吉斯迴歸使用交叉熵（Cross-entropy）函式作為cost function
+def plot_cross_entropy():
+    epsilon = 1e-5
+    h = np.linspace(epsilon, 1-epsilon)
+    y1 = -np.log(h)
+    y2 = -np.log(1 - h)
+    fig, ax = plt.subplots(1, 2, figsize=(8, 4))
+    ax[0].plot(h, y1)
+    ax[0].set_title('$y=1$\n$-\log(\sigma(Xw))$')
+    ax[0].set_xticks([0, 1])
+    ax[0].set_xlabel('$\sigma(Xw)$')
+    ax[1].plot(h, y2)
+    ax[1].set_title('$y=0$\n$-\log(1-\sigma(Xw))$')
+    ax[1].set_xticks([0, 1])
+    ax[1].set_xlabel('$\sigma(Xw)$')
+    plt.tight_layout()
+    plt.show()
+
+plot_cross_entropy()    
+    
+# %%
+from pyvizml import LogitReg
+h = LogitReg()
+h.fit(X_train, y_train, 100000, 0.01)
+print(h.intercept_)
+print(h.coef_)
+# %%
+y_pred = h.predict(X_valid)
+y_pred_label = [pos_dict[i] for i in y_pred]
+y_pred_label[:10]
+
+
+# %% 二元分類延伸至多元分類：One versus rest
+pos = player_states['pos'].values
+print(np.unique(pos))
+
+# %%
+unique_pos = player_states['pos'].unique()
+pos_dict = {i: p for i, p in enumerate(unique_pos)}
+pos_dict_reversed = {v: k for k, v in pos_dict.items()}
+pos_multiple = player_states['pos'].map(pos_dict_reversed)
+print(pos_dict)
+print(pos_dict_reversed)
+print(np.unique(pos_multiple))
+# %%
+X = player_states[['apg', 'rpg']].values.astype(float)
+y = pos_multiple
+X_train, X_valid, y_train, y_valid = train_test_split(X, y, test_size=0.33, random_state=42)
+h = LogisticRegression(C=1e5, multi_class='ovr')
+h.fit(X_train, y_train)
+p_hat = h.predict_proba(X_valid)
+p_hat[:10]
+
+# %%
+y_pred = np.argmax(p_hat, axis=1)
+y_pred_label = [pos_dict[i] for i in y_pred]
+print(y_pred_label[:10])
+# %% 二元分類延伸至多元分類：Softmax 函式
+h_sm = LogisticRegression(C=1e5, multi_class='multinomial')
+h_sm.fit(X_train, y_train)
+p_hat = h_sm.predict_proba(X_valid)
+p_hat[:10]
+# %%
+y_pred = np.argmax(p_hat, axis=1)
+y_pred[:10]
+# %%
+y_pred_label = [pos_dict[i] for i in y_pred]
+y_pred_label[:10]
+
+# %% 兩種表示類別向量的形式
+le = LabelEncoder()
+pos = player_states['pos'].values
+pos_le = le.fit_transform(pos)
+print(pos[:10])
+print(pos_le[:10])
+
+# %% 獨熱編碼（One-hot encoder）
+ohe = OneHotEncoder()
+pos_ohe = ohe.fit_transform(pos.reshape(-1, 1)).toarray()
+print(pos[:10])
+print(pos_ohe[:10])
+# %%
