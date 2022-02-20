@@ -110,3 +110,39 @@ y_train = utils.to_categorical(y_train, 10)
 y_valid = utils.to_categorical(y_valid, 10)
 y_test = utils.to_categorical(y_test, 10)
 # %%
+model = models.Sequential([
+    Input(28*28),
+    layers.Dense(2**8, activation='sigmoid'),
+    layers.Dense(2**8, activation='sigmoid'),
+    layers.Dense(2**8, activation='sigmoid'),
+    layers.Dense(10, activation='softmax')
+])
+model.summary()
+# %%
+model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['accuracy'])
+n_iters = 5
+model.fit(X_train, y_train,
+          validation_data=(X_valid, y_valid),
+          epochs=n_iters)
+# %%
+y_hat = model.predict(X_test)
+fig, axes = plt.subplots(3, 5, figsize=(12, 6))
+for i, index in enumerate(np.random.choice(X_test.shape[0], size=15, replace=False)):
+    row_idx = i % 3
+    col_idx = i // 3
+    axes[row_idx, col_idx].imshow(X_test[index].reshape(w, h), cmap="Greys")
+    axes[row_idx, col_idx].set_xticks([])
+    axes[row_idx, col_idx].set_yticks([])
+    predict_index = np.argmax(y_hat[index])
+    true_index = np.argmax(y_test[index])
+    axes[row_idx, col_idx].set_title(
+        "{} ({})".format(fashion_mnist_labels[predict_index], fashion_mnist_labels[true_index]),
+        color=("green" if predict_index == true_index else "red")
+    )
+plt.show()
+
+# %%
+score = model.evaluate(X_valid, y_valid)
+loss, accuracy = score
+print("Accuracy: {:.2f}%".format(accuracy*100))
+# %%
