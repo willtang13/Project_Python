@@ -97,7 +97,8 @@ class ImshowSubplots:
             col_idx = i // self._rows
             axes[row_idx, col_idx].imshow(first_n_pics[i], cmap="Greys")
             if label_dict is not None:
-                axes[row_idx, col_idx].set_title("Label: {}".format(label_dict(first_n_labels[i])))
+                axes[row_idx, col_idx].set_title("Label: {}".format(label_dict[first_n_labels[i]]))
+                pass
             else:
                 axes[row_idx, col_idx].set_title("Label: {}".format(first_n_labels[i]))
             axes[row_idx, col_idx].set_xticks([])
