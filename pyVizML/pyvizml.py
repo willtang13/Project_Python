@@ -556,3 +556,21 @@ class DeepLearning:
     def predict(self, X_test):
         p_hat_1 = self.predict_proba(X_test)
         return np.where(p_hat_1 >= 0.5, 1, 0)
+    
+def plot_contour_filled(XX, YY, resolution=50):
+    PROBA = np.zeros((resolution, resolution))
+    for i in range(resolution):
+        for j in range(resolution):
+            xx_ij = XX[i, j]
+            yy_ij = YY[i, j]
+            X_plot = np.array([xx_ij, yy_ij]).reshape(1, -1)
+            z = h.predict_proba(X_plot)[0, 1]
+            PROBA[i, j] = z
+    # fig, ax = plt.subplots()
+    # CS = ax.contourf(XX, YY, PROBA, cmap='RdBu')
+    # ax.set_title("Probability of being predicted as a forward")
+    # ax.set_xlabel("Assists per game")
+    # ax.set_ylabel("Rebounds per game")
+    # fig.colorbar(CS, ax=ax)
+    # plt.show()
+    
