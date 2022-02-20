@@ -130,4 +130,34 @@ for k, d, te, y_p in zip(range(9), degrees, training_errors, y_plots):
     axes[i, j].set_title("Degree: {}\nTraining Error: {:.4f}".format(d, te))
 plt.tight_layout()
 plt.show()
+# %% 減少訓練誤差與測試誤差的間距:  L2 正規化
+X = player_stats['heightMeters'].values.astype(float).reshape(-1, 1)
+y = player_stats['weightKilograms'].values.astype(float)
+poly = PolynomialFeatures(9)
+X_plot = np.linspace(X.min() - 0.1, X.max().max() + 0.1).reshape(-1, 1)
+X_poly = poly.fit_transform(X)
+X_plot_poly = poly.fit_transform(X_plot)
+X_train, X_valid, y_train, y_valid = train_test_split(X_poly, y, test_size=0.33, random_state=42)
+alphas = [0, 1, 10, 1e3, 1e5, 1e6, 1e7, 1e8, 1e9]
+y_plots = []
+for alpha in alphas:
+    h = Ridge(alpha=alpha)
+    h.fit(X_train, y_train)
+    y_pred = h.predict(X_train)
+    y_pred = h.predict(X_plot_poly)
+    y_plots.append(y_pred)
+
+# %%
+x = X.ravel()
+fig, axes = plt.subplots(3, 3, figsize=(12, 6), sharey=True)
+for k, alpha, y_p in zip(range(9), alphas, y_plots):
+    i = k // 3
+    j = k % 3
+    x_p = X_plot.ravel()
+    axes[i, j].scatter(x, y, s=5, alpha=0.5)
+    axes[i, j].plot(x_p, y_p, color="red")
+    axes[i, j].set_ylim(60, 150)
+    axes[i, j].set_title("L2 Regularization: {:.0f}".format(alpha))
+plt.tight_layout()
+plt.show()
 # %%
