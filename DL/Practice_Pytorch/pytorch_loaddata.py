@@ -38,11 +38,11 @@ train_transform = transforms.Compose([
                   transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
                 ])
 
-dataset_path = r'C:\Users\YuFamily\Documents\Will\Project\_DataSets\dogsandcats_100\dataset'
+dataset_path = r'C:\Users\YuFamily\Documents\Will\Project\_DataSets\dogsandcats_100'
 image_folder = ImageFolder(dataset_path, transform=train_transform, target_transform=None)
 
-data_loader = DataLoader(dataset=image_folder, batch_size=100, shuffle=True, num_workers=2)
-
+data_loader = DataLoader(dataset=image_folder, batch_size=10, shuffle=True, num_workers=0)
+#%%
 for batch_idx, (data, target) in enumerate(data_loader):
     print('data: ', data)
     print('label: ', target)

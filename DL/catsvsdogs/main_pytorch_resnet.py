@@ -1,3 +1,5 @@
+import os
+from numpy import concatenate
 import torch
 import torch.nn as nn
 # import torch.nn.functional as F
@@ -7,11 +9,12 @@ from torch.autograd import Variable
 from torchvision import datasets, transforms
 import matplotlib.pyplot as plt
 from datetime import datetime
+import csv
 
 # Global Parameters
 CUDA = torch.cuda.is_available()
-batch_size = 64
-num_epochs = 500
+batch_size = 16
+num_epochs = 10
 lr = 0.001
 num_classes = 2
 
@@ -216,7 +219,37 @@ def validate(valid_loader, model, criterion, epoch):
     valid_loss_ = valid_loss / total_valid
                     
     return valid_acc_, valid_loss_ 
-    
+   
+def test(test_loader, model, criterion): 
+    model.eval()
+    total_test = 0
+    correct_test = 0
+    test_loss = 0
+    data = None
+    target = None
+    predicted_log_ = []
+    for idx, (data, target) in enumerate(test_loader):
+        data, target = Variable(data), Variable(target) 
+        
+        if CUDA:
+            data, target = data.cuda(), target.cuda()
+
+        output = model(data)
+        loss = criterion(output, target) 
+
+        predicted = torch.max(output.data, 1)[1]
+        predicted_log_.append([target.tolist()[0], predicted.tolist()[0]])
+        # print('{}: target={}, predict={}'.format(idx, target.tolist()[0], predicted.tolist()[0]))
+        total_test += len(target)
+        correct_test += sum((predicted == target).float())
+        test_loss += loss.item()
+        
+    test_acc_ = 100 * (correct_test / float(total_test))
+    test_loss_ = test_loss / total_test
+    print('test info {}/{}'.format(correct_test, total_test))
+                    
+    return test_acc_, test_loss_, predicted_log_
+
 def training_loop(model, criterion, optimizer, train_loader, valid_loader, num_epochs):
     # set objects for storing metrics
     total_train_loss = []
@@ -256,63 +289,129 @@ def plot_result(total_train, total_valid, label):
     plt.ylabel(f'{label}')
     plt.legend()
     plt.show()
+    
+def save_model(model, out_path, content='Full'):
+    if not(os.path.isdir(out_path)):
+        os.makedirs(out_path)
+    ### Save model
+    if content=='weight':
+        # 只儲存模型的權重
+        torch.save(model.state_dict(), os.sep.join([out_path, 'model_weights.pth']))
+    else:
+        
+        # 完整儲存整個模型
+        torch.save(model, os.sep.join([out_path, 'model.pth']))
+        torch.save(model.state_dict(), os.sep.join([out_path, 'model_weights.pth']))
+        
+    # 讀取權重
+    # model.load_state_dict(torch.load('model_weights.pth'))
 
-def main():
+def main(do_training=True, model_path='', valid_data_path=''):
     
     device = torch.device('cuda' if CUDA else 'cpu')
     print(f'Device = {device}')
     
     
-    
-    # ResNet18
-    model = ResNet(basic_block, [2, 2, 2, 2], num_classes)
-    if CUDA:
-        model = model.cuda()
-    
-    optimizer = optim.Adam(model.parameters(), lr=lr)
-    criterion = nn.CrossEntropyLoss()
-    
-    # Transform
-    my_transform = transforms.Compose(
-        [
-            transforms.Resize(size=(227, 227)),
-            transforms.CenterCrop(224),
-            transforms.RandomRotation(20),
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor(),
-            transforms.Normalize((0.5, ), (0.5, )),
-        ]
-    )
-    
-    # Data
-    train_data_path = r'C:\Users\YuFamily\Documents\Will\Project\_DataSets\dogsandcats_500\training_set'
-    valid_data_path = r'C:\Users\YuFamily\Documents\Will\Project\_DataSets\dogsandcats_500\test_set'
-    t1 = datetime.now()
-    print('Transform...training data')
-    train_dataset = datasets.ImageFolder(root=train_data_path, transform=my_transform)
-    t2 = datetime.now()
-    print(f'spend {t2-t1}')
-    print('Transform...testing data')
-    valid_dataset = datasets.ImageFolder(root=valid_data_path, transform=my_transform)
-    t1 = datetime.now()
-    print(f'spend {t1-t2}')
-    print('Loading...training data')
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    t2 = datetime.now()
-    print(f'spend {t2-t1}')
-    print('Loading...test data')
-    valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=False)
-    t1 = datetime.now()
-    print(f'spend {t1-t2}')
-    
-    t1 = datetime.now()
-    print('Start training')
-    total_train_loss, total_valid_loss, total_train_accuracy, total_valid_accuracy = training_loop(model, criterion, optimizer, train_loader, valid_loader, num_epochs)
-    t2 = datetime.now()
-    print(f'finished... spend{t2-t1}')
-    plot_result(total_train_loss, total_valid_loss, 'loss')
-    plot_result(total_train_accuracy, total_valid_accuracy, 'accuracy')
+    if do_training:
+        # ResNet18
+        # model = ResNet(basic_block, [2, 2, 2, 2], num_classes)
+        # ResNet50
+        model = ResNet(bottleneck_block, [3, 4, 6, 3], num_classes)
+
+        if CUDA:
+            model = model.cuda()
+        
+        optimizer = optim.Adam(model.parameters(), lr=lr)
+        criterion = nn.CrossEntropyLoss()
+        
+        # Transform
+        my_transform = transforms.Compose(
+            [
+                transforms.Resize(size=(227, 227)),
+                transforms.CenterCrop(224),
+                transforms.RandomRotation(20),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                transforms.Normalize((0.5, ), (0.5, )),
+            ]
+        )
+        
+        # Data
+        train_data_path = r'C:\Users\YuFamily\Documents\Will\Project\_DataSets\dogsandcats_500\training_set'
+        valid_data_path = r'C:\Users\YuFamily\Documents\Will\Project\_DataSets\dogsandcats_500\test_set'
+        t1 = datetime.now()
+        print('Transform...training data')
+        train_dataset = datasets.ImageFolder(root=train_data_path, transform=my_transform)
+        t2 = datetime.now()
+        print(f'spend {t2-t1}')
+        print('Transform...testing data')
+        valid_dataset = datasets.ImageFolder(root=valid_data_path, transform=my_transform)
+        t1 = datetime.now()
+        print(f'spend {t1-t2}')
+        print('Loading...training data')
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+        t2 = datetime.now()
+        print(f'spend {t2-t1}')
+        print('Loading...test data')
+        valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=False)
+        t1 = datetime.now()
+        print(f'spend {t1-t2}')
+        
+        t1 = datetime.now()
+        print('Start training')
+        total_train_loss, total_valid_loss, total_train_accuracy, total_valid_accuracy = training_loop(model, criterion, optimizer, train_loader, valid_loader, num_epochs)
+        t2 = datetime.now()
+        print(f'finished... spend{t2-t1}')
+        plot_result(total_train_loss, total_valid_loss, 'loss')
+        plot_result(total_train_accuracy, total_valid_accuracy, 'accuracy')
+        
+        save_model(model, r'C:\Users\YuFamily\Documents\Will\Project\_DataSets\dogsandcats_500\resnet18')
+    else:
+        model = torch.load(model_path)
+        criterion = nn.CrossEntropyLoss()
+        # Transform
+        my_transform = transforms.Compose(
+            [
+                transforms.Resize(size=(227, 227)),
+                transforms.CenterCrop(224),
+                transforms.RandomRotation(20),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                transforms.Normalize((0.5, ), (0.5, )),
+            ]
+        )
+        test_dataset = datasets.ImageFolder(root=valid_data_path, transform=my_transform)
+        test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
+        
+        filename_list = []
+        for r,d,fs in os.walk(valid_data_path):
+            for f in fs:
+                filename_list.append(os.sep.join([r, f]))
+            
+        with torch.no_grad():
+            test_acc_, test_loss_, predicted_log_= test(test_loader, model, criterion)
+
+            print('==========================================================================')
+            print(" Test acc： {:.6f}， Valid loss： {:.6f}".format(
+                test_acc_, test_loss_))
+            print('==========================================================================')
+
+
+        # print(len(filename_list[:12]))
+        # print(predicted_log_)
+        result = [[f, str(p1), str(p2)] for f, [p1, p2] in zip(filename_list, predicted_log_)]
+        # print(result)
+        with open(r'C:\Users\YuFamily\Documents\Will\Project\_DataSets\dogsandcats_500\resnet18\result.csv', mode='w', newline='') as csv_file:
+            writer = csv.writer(csv_file)
+            writer.writerow(['Filename', 'Target', 'Predicted'])
+            writer.writerows(result)
+            writer.writerow('')
+            writer.writerow('================')
+            writer.writerow(['Test Acc', str(test_acc_)])
+        
+            
     return 
     
 if __name__ == '__main__':
-    main()
+    # main()
+    main(False, r'C:\Users\YuFamily\Documents\Will\Project\_DataSets\dogsandcats_500\resnet18\model.pth', valid_data_path=r'C:\Users\YuFamily\Documents\Will\Project\_DataSets\dogsandcats_500\test_set')
